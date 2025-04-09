@@ -1,62 +1,83 @@
-const convertbutton = document.querySelector(".convert-button")
-const currencySelect = document.querySelector(".currency-select")
-const currencySelect1 = document.querySelector(".currency-select1")
+const convertbutton = document.querySelector(".convert-button");
+const currencySelect = document.querySelector(".currency-select");
+const currencySelect1 = document.querySelector(".currency-select1");
 
 
 async function convertValues() {
-    const inputCurrencyValue = document.querySelector(".input-currency").value
-    const currencyValueToConvert = document.querySelector(".currency-value-to-convert") // value in money
-    const currencyValueToConverted = document.querySelector(".currency-value") // outras moedas
-
-console.log(currencySelect)
-try { 
-   const data = await fetch("https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL,GBP-BRL").then(response => response.json())
+    const inputCurrencyValue = parseFloat(document.querySelector(".input-currency").value);
+    const currencyValueToConvert = document.querySelector(".currency-value-to-convert");
+    const currencyValueToConverted = document.querySelector(".currency-value");
     
 
-   const real = 1
-   const dolar = parseFloat(data.USDBRL.high);
-   const euro = parseFloat(data.EURBRL.high);
-   const libra = parseFloat(data.GBPBRL.high);
-   const bitcoin = parseFloat(data.BTCBRL.high);
 
-   currencyValueToConvert.innerHTML = new Intl.NumberFormat("pt-BR", {
-       style: "currency",
-       currency: "BRL"
-   }).format(inputCurrencyValue / real);
+    const fromCurrency = currencySelect1.value; // De
+    const toCurrency = currencySelect.value;    // Para
 
-   let convertedValue;
+    if (isNaN(inputCurrencyValue) || inputCurrencyValue <= 0) {
+        alert("Digite um valor válido maior que 0");
+        return;
+    }
 
-   if (currencySelect.value === "euro") {
-       convertedValue = inputCurrencyValue / euro;
-       currencyValueToConverted.innerHTML = new Intl.NumberFormat("de-DE", {
-           style: "currency",
-           currency: "EUR"
-       }).format(convertedValue);
-   } else if (currencySelect.value === "dolar") {
-       convertedValue = inputCurrencyValue / dolar;
-       currencyValueToConverted.innerHTML = new Intl.NumberFormat("en-US", {
-           style: "currency",
-           currency: "USD"
-       }).format(convertedValue);
-   } else if (currencySelect.value === "libra") {
-       convertedValue = inputCurrencyValue / libra;
-       currencyValueToConverted.innerHTML = new Intl.NumberFormat("en-GB", {
-           style: "currency",
-           currency: "GBP"
-       }).format(convertedValue);
-   } else if (currencySelect.value === "bitcoin") {
-       convertedValue = inputCurrencyValue / bitcoin;
-       currencyValueToConverted.innerHTML = convertedValue.toFixed(6) + " BTC"; // Bitcoin normalmente não usa formatação de moeda
-   }
-   
+    try {
+        const response = await fetch("https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL,GBP-BRL");
+        const data = await response.json();
 
-} catch (error) {
-   console.error("Erro ao buscar dados da API", error);
+        const rates = {
+            real: 1,
+            dolar: parseFloat(data.USDBRL.high),
+            euro: parseFloat(data.EURBRL.high),
+            libra: parseFloat(data.GBPBRL.high),
+            bitcoin: parseFloat(data.BTCBRL.high)
+        };
 
+        // Converter de moeda origem para BRL
+        let valueInBRL = fromCurrency === "real"
+            ? inputCurrencyValue
+            : inputCurrencyValue * rates[fromCurrency];
+
+        // Converter de BRL para moeda destino
+        let convertedValue = toCurrency === "real"
+            ? valueInBRL
+            : valueInBRL / rates[toCurrency];
+
+        // Exibir valor original
+        const fromCurrencyCode = {
+            real: "BRL",
+            dolar: "USD",
+            euro: "EUR",
+            libra: "GBP",
+            bitcoin: "BTC"
+        }[fromCurrency];
+
+        const toCurrencyCode = {
+            real: "BRL",
+            dolar: "USD",
+            euro: "EUR",
+            libra: "GBP",
+            bitcoin: "BTC"
+        }[toCurrency];
+
+        currencyValueToConvert.innerHTML = fromCurrency === "bitcoin"
+            ? inputCurrencyValue.toFixed(6) + " BTC"
+            : new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: fromCurrencyCode
+            }).format(inputCurrencyValue);
+
+        currencyValueToConverted.innerHTML = toCurrency === "bitcoin"
+            ? convertedValue.toFixed(6) + " BTC"
+            : new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: toCurrencyCode
+            }).format(convertedValue);
+
+    } catch (error) {
+        console.error("Erro na conversão", error);
+        alert("Erro ao converter moedas. Verifique a conexão com a internet.");
+    }
 }
 
 
-}
 
 function changeCurrency() {
 
